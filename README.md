@@ -1,11 +1,14 @@
-# ProductIQ – agentic product-innovation copilot
+# ProductIQ – Agentic Product-Innovation Copilot
 
 > Microsoft PSA **Hack to Build 2026** · Microsoft Foundry · Microsoft Agent Framework · Microsoft Fabric
 > Demo company: **Contoso Home Appliances** (fictional). **All data is synthetic; every KPI is a target.**
 
-ProductIQ helps product development teams decide faster what to improve and what to build next. It combines customer feedback, market trends, cost, supplier availability and logistics data into **evidence-backed, ranked product options with a scorecard and citations**. It then carries that context into the team's Teams meeting and group chat, so no one has to re-explain it.
+ProductIQ – Agentic Product-Innovation Copilot
+ProductIQ helps product development teams decide what to improve and what to build next. It brings together customer feedback, market needs, trends, cost, supplier availability and logistics, then suggests product improvements and new designs with the evidence behind each one.
 
-A product manager asks in **Microsoft 365 Copilot** (or the web app). ProductIQ's specialist agents reason over **Fabric** data (through **Fabric IQ** and a Fabric data agent), the **Foundry IQ** knowledge base and the web, and propose options. After the PM **approves**, ProductIQ creates a **Teams meeting and project group chat**, joins the chat and answers @mentions from shared **project memory**.
+Users start in **Microsoft Copilot or Teams**. ProductIQ reasons over analysed data in **Microsoft Fabric (through the Fabric IQ tool)** and over documents in **Foundry IQ** knowledge. **Microsoft Agent Framework** coordinates a set of specialist agents hosted in **Microsoft Foundry Agent Service**. With the user's approval, ProductIQ sets up a Teams meeting and group chat with project members, joins the chat and keeps project memory, so nobody has to explain the work again.
+
+This repository contains everything needed to stand up the solution in your own tenant: Bicep templates for the Azure resources, PowerShell and Python setup scripts for Entra ID, Foundry, Fabric, Microsoft 365 and Teams, a synthetic-data generator with 24 months of records for the fictional Contoso Home Appliances, Fabric notebooks for the medallion pipeline, the agent app and tests, an evaluation set, and GitHub Actions workflows. All data is synthetic and every KPI is a target.
 
 ---
 
