@@ -1,0 +1,10 @@
+# Dependencies for the setup scripts (not the app – see src/requirements.txt)
+azure-identity>=1.19.0
+azure-storage-blob>=12.23.0
+azure-storage-file-datalake>=12.17.0
+requests>=2.32.0
+python-dotenv>=1.0.1
+numpy>=1.26
+pandas>=2.2
+# Fabric data agent management SDK (preview) – used by scripts/fabric/create_data_agent.py
+fabric-data-agent-sdk

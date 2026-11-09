@@ -1,0 +1,69 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.22/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.22",
+  "version": "{{APP_VERSION}}",
+  "id": "{{TEAMS_APP_ID}}",
+  "developer": {
+    "name": "ProductIQ (Hack to Build 2026 demo)",
+    "websiteUrl": "https://{{APP_FQDN}}",
+    "privacyUrl": "https://{{APP_FQDN}}/privacy",
+    "termsOfUseUrl": "https://{{APP_FQDN}}/terms"
+  },
+  "icons": { "color": "color.png", "outline": "outline.png" },
+  "name": { "short": "ProductIQ", "full": "ProductIQ – product innovation copilot" },
+  "description": {
+    "short": "Evidence-backed product improvement and new product ideas.",
+    "full": "ProductIQ analyses customer feedback, market trends, cost, supplier availability and logistics (Microsoft Fabric + Foundry IQ) to propose ranked product options with a scorecard and citations. With your approval it sets up a Teams meeting and project chat, joins it and keeps the project memory so nobody has to re-explain the work. Demo uses synthetic Contoso Home Appliances data."
+  },
+  "accentColor": "#0F6E6E",
+  "copilotAgents": {
+    "customEngineAgents": [
+      {
+        "type": "bot",
+        "id": "{{BOT_APP_ID}}",
+        "disclaimer": { "text": "ProductIQ demo – synthetic data. AI-generated content may be incorrect; numbers are cited from Fabric data. Actions like meetings and chats run only after your approval." }
+      }
+    ]
+  },
+  "bots": [
+    {
+      "botId": "{{BOT_APP_ID}}",
+      "scopes": [ "personal", "team", "groupChat", "copilot" ],
+      "supportsFiles": false,
+      "isNotificationOnly": false,
+      "commandLists": [
+        {
+          "scopes": [ "personal", "copilot" ],
+          "commands": [
+            { "title": "New product idea", "description": "What new product should we build for pet owners next year, and can we make it?" },
+            { "title": "Top complaints", "description": "What are the top complaints from pet owners about our robot vacuums?" },
+            { "title": "Supplier risk", "description": "Which components of the RoboClean R7 are single-sourced?" },
+            { "title": "Set up a meeting", "description": "Set up a meeting with the project team and include ProductIQ." }
+          ]
+        },
+        {
+          "scopes": [ "groupChat", "team" ],
+          "commands": [
+            { "title": "Summary", "description": "Summarise the project so far." },
+            { "title": "Re-score", "description": "Re-score option C using the current motor platform." },
+            { "title": "Decisions", "description": "List decisions and action items." }
+          ]
+        }
+      ]
+    }
+  ],
+  "permissions": [ "identity", "messageTeamMembers" ],
+  "validDomains": [ "{{APP_FQDN}}", "token.botframework.com" ],
+  "webApplicationInfo": {
+    "id": "{{GRAPH_APP_CLIENT_ID}}",
+    "resource": "api://botid-{{BOT_APP_ID}}"
+  },
+  "authorization": {
+    "permissions": {
+      "resourceSpecific": [
+        { "name": "ChatMessage.Read.Chat", "type": "Application" },
+        { "name": "ChatMember.Read.Chat", "type": "Application" }
+      ]
+    }
+  }
+}

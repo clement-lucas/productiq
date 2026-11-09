@@ -1,0 +1,51 @@
+# Manual deployment with GitHub OIDC (no secrets stored). Setup: see README > "CI/CD with GitHub Actions".
+# Repository variables: AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID, AZURE_LOCATION, DEPLOYER_PRINCIPAL_ID
+name: deploy
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment name
+        default: dev
+      mode:
+        description: what-if | infra | app
+        default: what-if
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: What-if
+        if: inputs.mode == 'what-if'
+        run: |
+          az deployment sub what-if --location ${{ vars.AZURE_LOCATION }} --template-file infra/main.bicep \
+            --parameters environmentName=${{ inputs.environment }} location=${{ vars.AZURE_LOCATION }} \
+                         deployerPrincipalId=${{ vars.DEPLOYER_PRINCIPAL_ID }} deployerPrincipalType=ServicePrincipal
+      - name: Deploy infrastructure
+        if: inputs.mode == 'infra'
+        run: |
+          az deployment sub create --name productiq-${{ inputs.environment }}-${{ github.run_number }} --location ${{ vars.AZURE_LOCATION }} \
+            --template-file infra/main.bicep \
+            --parameters environmentName=${{ inputs.environment }} location=${{ vars.AZURE_LOCATION }} \
+                         deployerPrincipalId=${{ vars.DEPLOYER_PRINCIPAL_ID }} deployerPrincipalType=ServicePrincipal
+      - name: Build and deploy the app
+        if: inputs.mode == 'app'
+        run: |
+          RG=rg-piq-${{ inputs.environment }}
+          ACR=$(az acr list -g $RG --query "[0].name" -o tsv)
+          APP=$(az containerapp list -g $RG --query "[0].name" -o tsv)
+          TAG=${{ github.sha }}
+          az acr build --registry $ACR --image productiq-api:$TAG --file src/Dockerfile src
+          az containerapp update -n $APP -g $RG --image $ACR.azurecr.io/productiq-api:$TAG
+          az containerapp ingress update -n $APP -g $RG --target-port 8000

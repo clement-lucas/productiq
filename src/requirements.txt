@@ -1,0 +1,24 @@
+# ProductIQ service – Python 3.11+ (container uses 3.12)
+#
+# Microsoft Agent Framework: the Python package moved quickly through preview (1.0.0bYYMMDD builds)
+# and renamed classes (ChatAgent -> Agent, AzureAIAgentClient -> foundry.FoundryChatClient).
+# Pin the exact version you test with, and adjust productiq/orchestrator.py:AgentRunner if needed.
+agent-framework>=1.0.0
+
+# Foundry project client (Responses API + agent_reference via get_openai_client())
+azure-ai-projects>=2.2.0
+openai>=1.100.0
+azure-identity>=1.19.0
+azure-cosmos>=4.9.0
+azure-monitor-opentelemetry>=1.6.4
+
+# Microsoft 365 Agents SDK for Python (Teams / M365 Copilot custom engine agent)
+# Verify minimums against the version you deploy (API surface still evolving).
+microsoft-agents-hosting-aiohttp>=0.5.0
+microsoft-agents-hosting-core>=0.5.0
+microsoft-agents-authentication-msal>=0.5.0
+microsoft-agents-activity>=0.5.0
+
+aiohttp>=3.10.0
+httpx>=0.27.0
+python-dotenv>=1.0.1

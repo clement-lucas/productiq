@@ -1,0 +1,37 @@
+# Compiles infra/main.bicep to an ARM template (infra/arm/azuredeploy.json) and commits it back,
+# so the repository always contains an up-to-date ARM version of the Bicep templates.
+name: build-arm
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'infra/**.bicep', 'infra/**.bicepparam' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  arm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: az bicep install
+      - name: Compile Bicep to ARM
+        run: |
+          az bicep build --file infra/main.bicep --outfile infra/arm/azuredeploy.json
+          python3 - <<'PY'
+          import json
+          p = {"$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+               "contentVersion": "1.0.0.0",
+               "parameters": {"environmentName": {"value": "dev"}, "prefix": {"value": "piq"}, "location": {"value": "eastus2"},
+                              "deployerPrincipalId": {"value": "<object-id-of-the-deploying-user>"},
+                              "fabricAdminMembers": {"value": ["<admin-upn>"]}}}
+          json.dump(p, open("infra/arm/azuredeploy.parameters.json", "w"), indent=2)
+          PY
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add infra/arm/azuredeploy.json infra/arm/azuredeploy.parameters.json
+          git diff --cached --quiet || git commit -m "chore: regenerate ARM template from Bicep [skip ci]"
+          git push

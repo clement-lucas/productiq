@@ -1,0 +1,27 @@
+# Local environment and secrets – never commit
+config/environment.json
+config/outputs.json
+.env
+*.env.local
+*.pfx
+*.pem
+
+# Generated data and build output
+data/output/
+teams-app/build/
+eval/results/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# Editors / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db

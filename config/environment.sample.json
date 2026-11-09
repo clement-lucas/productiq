@@ -1,0 +1,24 @@
+{
+  "$comment": "Copy to config/environment.json (git-ignored) and fill in. Read by scripts/*.ps1.",
+  "tenantId": "<entra-directory-id>",
+  "tenantDomain": "<tenant>.onmicrosoft.com",
+  "subscriptionId": "<azure-subscription-id>",
+  "subscriptionName": "<azure-subscription-name>",
+  "environmentName": "dev",
+  "prefix": "piq",
+  "location": "eastus2",
+  "fabricAdminUpn": "",
+  "fabricSku": "F2",
+  "deployFabricCapacity": true,
+  "enableBingGrounding": true,
+  "models": {
+    "reasoning": { "name": "gpt-5.4", "version": "", "capacity": 50 },
+    "router":    { "name": "gpt-5.4-mini", "version": "", "capacity": 100 },
+    "embedding": { "name": "text-embedding-3-large", "version": "1", "capacity": 50 }
+  },
+  "demoUsers": {
+    "create": true,
+    "password": "",
+    "usageLocation": "JP"
+  }
+}

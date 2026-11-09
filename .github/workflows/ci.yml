@@ -1,0 +1,60 @@
+name: ci
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  infra:
+    name: Bicep build & lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Bicep
+        run: az bicep install
+      - name: Build (compiles to ARM and runs the linter)
+        run: |
+          az bicep build --file infra/main.bicep --outfile /tmp/azuredeploy.json
+          az bicep lint --file infra/main.bicep
+          echo "ARM template size: $(wc -c < /tmp/azuredeploy.json) bytes"
+
+  python:
+    name: Python checks, unit tests, data generator
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install lightweight deps
+        run: pip install numpy pandas requests
+      - name: Compile all Python
+        run: python -m compileall -q scripts src data eval
+      - name: Unit tests (pure logic, no Azure calls)
+        run: PYTHONPATH=src python -m unittest discover -s tests -t . -v
+      - name: Generate a small synthetic dataset and validate scenario signals
+        run: python data/generator/generate_data.py --out /tmp/data --seed 42 --scale 0.3
+      - name: Validate notebooks and JSON assets
+        run: |
+          python - <<'PY'
+          import json, glob
+          for f in glob.glob('fabric/notebooks/*.ipynb') + glob.glob('fabric/data-agent/*.json') + ['teams-app/manifest.template.json']:
+              json.load(open(f, encoding='utf-8')); print('ok', f)
+          PY
+
+  powershell:
+    name: PowerShell lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          Install-Module PSScriptAnalyzer -Force -Scope CurrentUser
+          $r = Invoke-ScriptAnalyzer -Path scripts -Recurse -Severity Error
+          $r | Format-Table
+          if ($r.Count -gt 0) { exit 1 }

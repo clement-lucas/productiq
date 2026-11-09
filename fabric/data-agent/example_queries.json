@@ -1,0 +1,82 @@
+[
+  {
+    "question": "What are the top complaint topics among pet owners in the last 18 months?",
+    "query": "SELECT topic, COUNT(*) AS negative_reviews, ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 1) AS share_pct FROM fact_feedback WHERE source = 'review' AND CAST(is_pet_owner AS INT) = 1 AND sentiment_label = 'negative' AND feedback_date BETWEEN '2025-05-01' AND '2026-10-31' GROUP BY topic ORDER BY negative_reviews DESC"
+  },
+  {
+    "question": "What share of negative pet-owner reviews is about hair tangling on the brush roll (last 18 months)?",
+    "query": "SELECT COUNT(*) AS negative_pet_owner_reviews, SUM(CASE WHEN topic = 'hair_tangling' THEN 1 ELSE 0 END) AS hair_tangling_reviews, ROUND(100.0 * SUM(CASE WHEN topic = 'hair_tangling' THEN 1 ELSE 0 END) / COUNT(*), 1) AS hair_tangling_share_pct FROM fact_feedback WHERE source = 'review' AND CAST(is_pet_owner AS INT) = 1 AND sentiment_label = 'negative' AND feedback_date BETWEEN '2025-05-01' AND '2026-10-31'"
+  },
+  {
+    "question": "How does the hair-tangling share of negative vacuum reviews compare between pet owners and non-pet owners?",
+    "query": "SELECT CASE WHEN CAST(f.is_pet_owner AS INT) = 1 THEN 'pet owner' ELSE 'non-pet owner' END AS customer_type, COUNT(*) AS negative_reviews, ROUND(100.0 * SUM(CASE WHEN f.topic = 'hair_tangling' THEN 1 ELSE 0 END) / COUNT(*), 1) AS hair_tangling_share_pct FROM fact_feedback f JOIN dim_product p ON f.product_id = p.product_id WHERE f.source = 'review' AND f.sentiment_label = 'negative' AND p.category IN ('robot_vacuum', 'stick_vacuum', 'canister_vacuum') AND f.feedback_date BETWEEN '2025-05-01' AND '2026-10-31' GROUP BY CASE WHEN CAST(f.is_pet_owner AS INT) = 1 THEN 'pet owner' ELSE 'non-pet owner' END"
+  },
+  {
+    "question": "Show the monthly trend of hair-tangling complaints from pet owners (reviews and tickets).",
+    "query": "SELECT year_month, source, COUNT(*) AS hair_tangling_complaints FROM fact_feedback WHERE CAST(is_pet_owner AS INT) = 1 AND topic = 'hair_tangling' AND sentiment_label = 'negative' GROUP BY year_month, source ORDER BY year_month, source"
+  },
+  {
+    "question": "What is the average rating and the share of negative reviews per robot vacuum model in the last 12 months?",
+    "query": "SELECT p.product_name, COUNT(*) AS reviews, ROUND(AVG(f.rating * 1.0), 2) AS avg_rating, ROUND(100.0 * SUM(CASE WHEN f.sentiment_label = 'negative' THEN 1 ELSE 0 END) / COUNT(*), 1) AS negative_share_pct FROM fact_feedback f JOIN dim_product p ON f.product_id = p.product_id WHERE f.source = 'review' AND p.category = 'robot_vacuum' AND f.year_month BETWEEN '2025-11' AND '2026-10' GROUP BY p.product_name ORDER BY negative_share_pct DESC"
+  },
+  {
+    "question": "What is the year-over-year growth of pet-care cleaning demand?",
+    "query": "SELECT ROUND(SUM(CASE WHEN year_month BETWEEN '2025-11' AND '2026-10' THEN value ELSE 0 END), 1) AS last_12m_market_usd_m, ROUND(SUM(CASE WHEN year_month BETWEEN '2024-11' AND '2025-10' THEN value ELSE 0 END), 1) AS prev_12m_market_usd_m, ROUND(100.0 * (SUM(CASE WHEN year_month BETWEEN '2025-11' AND '2026-10' THEN value ELSE 0 END) / SUM(CASE WHEN year_month BETWEEN '2024-11' AND '2025-10' THEN value ELSE 0 END) - 1), 1) AS yoy_growth_pct FROM fact_market_signal WHERE category = 'pet_care_cleaning' AND metric = 'market_size_usd_m'"
+  },
+  {
+    "question": "Which regions grow fastest in pet-care cleaning demand (YoY)?",
+    "query": "SELECT m.region_code, r.region_name, ROUND(100.0 * (SUM(CASE WHEN m.year_month BETWEEN '2025-11' AND '2026-10' THEN m.value ELSE 0 END) / SUM(CASE WHEN m.year_month BETWEEN '2024-11' AND '2025-10' THEN m.value ELSE 0 END) - 1), 1) AS yoy_growth_pct FROM fact_market_signal m JOIN dim_region r ON m.region_code = r.region_code WHERE m.category = 'pet_care_cleaning' AND m.metric = 'market_size_usd_m' GROUP BY m.region_code, r.region_name ORDER BY yoy_growth_pct DESC"
+  },
+  {
+    "question": "Compare YoY market growth across all categories.",
+    "query": "SELECT category, ROUND(100.0 * (SUM(CASE WHEN year_month BETWEEN '2025-11' AND '2026-10' THEN value ELSE 0 END) / SUM(CASE WHEN year_month BETWEEN '2024-11' AND '2025-10' THEN value ELSE 0 END) - 1), 1) AS yoy_growth_pct FROM fact_market_signal WHERE metric = 'market_size_usd_m' GROUP BY category ORDER BY yoy_growth_pct DESC"
+  },
+  {
+    "question": "What is the utilisation of the BLM-200 brushless motor and how many suppliers does it have (last 6 months)?",
+    "query": "SELECT f.year_month, s.supplier_name, f.utilisation_pct, f.committed_units, f.capacity_units, f.lead_time_days, f.supplier_count_for_component, f.alt_supplier_qualification_days, f.risk_level FROM fact_supplier_capacity f JOIN dim_supplier s ON f.supplier_id = s.supplier_id WHERE f.component_id = 'BLM-200' AND f.year_month >= '2026-05' ORDER BY f.year_month DESC"
+  },
+  {
+    "question": "Which critical single-sourced components have the highest utilisation in the latest month?",
+    "query": "SELECT f.component_id, c.component_name, s.supplier_name, f.utilisation_pct, f.lead_time_days, f.alt_supplier_qualification_days, f.risk_level FROM fact_supplier_capacity f JOIN dim_component c ON f.component_id = c.component_id JOIN dim_supplier s ON f.supplier_id = s.supplier_id WHERE f.year_month = (SELECT MAX(year_month) FROM fact_supplier_capacity) AND CAST(f.is_single_source AS INT) = 1 AND CAST(c.is_critical AS INT) = 1 ORDER BY f.utilisation_pct DESC"
+  },
+  {
+    "question": "How did the battery supplier disruption in early 2026 show up in utilisation and lead times?",
+    "query": "SELECT f.year_month, s.supplier_name, f.component_id, f.utilisation_pct, f.lead_time_days FROM fact_supplier_capacity f JOIN dim_supplier s ON f.supplier_id = s.supplier_id JOIN dim_component c ON f.component_id = c.component_id WHERE c.component_category = 'battery' AND f.year_month BETWEEN '2026-01' AND '2026-05' ORDER BY f.year_month, f.component_id, s.supplier_name"
+  },
+  {
+    "question": "What is the BOM cost of the CHA RoboClean R7 in the latest month, by component?",
+    "query": "SELECT b.component_id, c.component_name, b.quantity_per_unit, b.unit_cost_usd, b.extended_cost_usd, SUM(b.extended_cost_usd) OVER () AS total_bom_cost_usd FROM fact_bom_cost b JOIN dim_component c ON b.component_id = c.component_id WHERE b.product_id = 'CHA-RV-R7' AND b.year_month = (SELECT MAX(year_month) FROM fact_bom_cost) ORDER BY b.extended_cost_usd DESC"
+  },
+  {
+    "question": "How has the BOM cost of each robot vacuum evolved by quarter?",
+    "query": "SELECT b.year_month, p.product_name, ROUND(SUM(b.extended_cost_usd), 2) AS bom_cost_usd, p.list_price_usd, ROUND(100.0 * SUM(b.extended_cost_usd) / p.list_price_usd, 1) AS bom_share_of_list_price_pct FROM fact_bom_cost b JOIN dim_product p ON b.product_id = p.product_id WHERE p.category = 'robot_vacuum' AND b.year_month IN ('2024-11', '2025-02', '2025-05', '2025-08', '2025-11', '2026-02', '2026-05', '2026-08', '2026-10') GROUP BY b.year_month, p.product_name, p.list_price_usd ORDER BY p.product_name, b.year_month"
+  },
+  {
+    "question": "Which products use the BLM-200 motor and how many units did they sell in the last 12 months?",
+    "query": "SELECT p.product_name, SUM(s.units_sold) AS units_last_12m FROM fact_sales s JOIN dim_product p ON s.product_id = p.product_id WHERE s.year_month BETWEEN '2025-11' AND '2026-10' AND s.product_id IN (SELECT DISTINCT product_id FROM fact_bom_cost WHERE component_id = 'BLM-200' AND year_month = '2026-10') GROUP BY p.product_name ORDER BY units_last_12m DESC"
+  },
+  {
+    "question": "Show the monthly freight cost, freight cost per kg and CO2e trend.",
+    "query": "SELECT year_month, ROUND(SUM(freight_cost_usd), 0) AS freight_cost_usd, ROUND(SUM(freight_cost_usd) / SUM(weight_kg), 3) AS freight_cost_per_kg_usd, ROUND(SUM(co2e_kg) / 1000, 1) AS co2e_t FROM fact_logistics GROUP BY year_month ORDER BY year_month"
+  },
+  {
+    "question": "When did ocean freight cost per kg peak?",
+    "query": "SELECT year_month, ROUND(SUM(freight_cost_usd) / SUM(weight_kg), 3) AS ocean_cost_per_kg_usd, COUNT(*) AS shipments FROM fact_logistics WHERE transport_mode = 'ocean' GROUP BY year_month ORDER BY ocean_cost_per_kg_usd DESC"
+  },
+  {
+    "question": "How is CO2e split by transport mode in the last 12 months?",
+    "query": "SELECT transport_mode, COUNT(*) AS shipments, ROUND(SUM(co2e_kg) / 1000, 1) AS co2e_t, ROUND(100.0 * SUM(co2e_kg) / SUM(SUM(co2e_kg)) OVER (), 1) AS co2e_share_pct FROM fact_logistics WHERE year_month BETWEEN '2025-11' AND '2026-10' GROUP BY transport_mode ORDER BY co2e_t DESC"
+  },
+  {
+    "question": "What is the on-time delivery rate by origin plant in the last 12 months?",
+    "query": "SELECT l.origin_plant_id, pl.plant_name, COUNT(*) AS delivered_shipments, ROUND(100.0 * SUM(CAST(l.is_on_time AS INT)) / COUNT(*), 1) AS on_time_rate_pct, ROUND(AVG(l.delay_days * 1.0), 2) AS avg_delay_days FROM fact_logistics l JOIN dim_plant pl ON l.origin_plant_id = pl.plant_id WHERE l.is_on_time IS NOT NULL AND l.year_month BETWEEN '2025-11' AND '2026-10' GROUP BY l.origin_plant_id, pl.plant_name ORDER BY on_time_rate_pct"
+  },
+  {
+    "question": "What are the top warranty failure modes for robot vacuums in the last 12 months, split by pet owners?",
+    "query": "SELECT w.failure_mode, COUNT(*) AS claims, SUM(CAST(w.is_pet_owner AS INT)) AS claims_pet_owners, ROUND(SUM(w.claim_cost_usd), 0) AS claim_cost_usd, ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 1) AS share_pct FROM fact_warranty w JOIN dim_product p ON w.product_id = p.product_id WHERE p.category = 'robot_vacuum' AND w.year_month BETWEEN '2025-11' AND '2026-10' GROUP BY w.failure_mode ORDER BY claims DESC"
+  },
+  {
+    "question": "How many units and how much net revenue did robot vacuums generate by region in the last 12 months?",
+    "query": "SELECT s.region_code, r.region_name, SUM(s.units_sold) AS units, ROUND(SUM(s.net_revenue_usd), 0) AS net_revenue_usd FROM fact_sales s JOIN dim_product p ON s.product_id = p.product_id JOIN dim_region r ON s.region_code = r.region_code WHERE p.category = 'robot_vacuum' AND s.year_month BETWEEN '2025-11' AND '2026-10' GROUP BY s.region_code, r.region_name ORDER BY net_revenue_usd DESC"
+  }
+]
